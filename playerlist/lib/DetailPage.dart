@@ -1,4 +1,6 @@
 
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter/cupertino.dart';
@@ -20,44 +22,57 @@ class _DetailPageState extends State<DetailPage> {
   bool showCover = true;
   bool hasError = false;
 
+  ///Stream监听
+  StreamSubscription _currentPosSubs;
+  Duration _currentPos;
+
   @override
   void initState() {
     curModel = widget.param['video'];
-    player.addListener(() {
-      if (player.value.state == FijkState.started) {
-        setState(() {
-          showCover = false;
-        });
-      }
-      if (player.value.state == FijkState.error) {
-        setState(() {
-          hasError = true;
-        });
-      }
-
-      if (player.value.state == FijkState.completed) {
-        ///仅适用m3u8播放完成重置重新载入
-        player.reset().then((value) {
-          player.setDataSource(curModel.url,autoPlay: true);
-        });
-
-
-      }
-      
-    });
+    player.addListener(_fijkValueListener);
 
     super.initState();
     player.setDataSource(
       curModel.url,
       autoPlay: true,
     );
+
+    _currentPos = player.currentPos;
+    _currentPosSubs = player.onCurrentPosUpdate.listen((v) {
+      setState(() {
+        _currentPos = v;
+      });
+    });
+
   }
 
   @override
   void dispose() {
     // TODO: implement dispose
     super.dispose();
+    _currentPosSubs.cancel();
+    player.removeListener(_fijkValueListener);
     player.release();
+  }
+
+  void _fijkValueListener() {
+    if (player.value.state == FijkState.started) {
+      setState(() {
+        showCover = false;
+      });
+    }
+    if (player.value.state == FijkState.error) {
+      setState(() {
+        hasError = true;
+      });
+    }
+
+    if (player.value.state == FijkState.completed) {
+      ///仅适用m3u8播放完成重置重新载入
+      player.reset().then((value) {
+        player.setDataSource(curModel.url,autoPlay: true);
+      });
+    }
   }
 
   @override
@@ -131,6 +146,20 @@ class _DetailPageState extends State<DetailPage> {
           Visibility(
             visible: hasError,
             child: Icon(Icons.error,size: 50,),
+          ),
+          Positioned(
+            bottom: 30,
+            left: 20,
+            right: 20,
+            child: LinearProgressIndicator(),
+            // child: Text(
+            //   null == _currentPos ? "0" : "${_currentPos.toString()}",
+            //   style: TextStyle(
+            //     color: Colors.white,
+            //     fontSize: 15.0,
+            //   ),
+            //   textAlign: TextAlign.center,
+            // ),
           ),
         ],
       ),
