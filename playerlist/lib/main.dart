@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:playerlist/DetailPage.dart';
+import 'package:playerlist/HomePage.dart';
 
 void main() {
+  //确保Global.init()方法不能抛出异常，否则 runApp(MyApp())根本执行不到
+  WidgetsFlutterBinding.ensureInitialized();
+
+  //强制竖屏
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+
+  ]);
   runApp(MyApp());
 }
 
@@ -22,7 +35,11 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      routes: {
+        "/": (context) => HomePage(),
+        "detailPage":(context) => DetailPage(param: ModalRoute.of(context).settings.arguments,),
+      },
+      // home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
