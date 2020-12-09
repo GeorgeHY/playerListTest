@@ -38,7 +38,7 @@ class _DetailPageState extends State<DetailPage> with WidgetsBindingObserver{
 
     super.initState();
     player.setDataSource(
-      curModel.url,
+      curModel.m3u8,
       autoPlay: true,
     );
 
@@ -107,7 +107,7 @@ class _DetailPageState extends State<DetailPage> with WidgetsBindingObserver{
 
       ///仅适用m3u8播放完成重置重新载入
       player.reset().then((value) {
-        player.setDataSource(curModel.url,autoPlay: true);
+        player.setDataSource(curModel.m3u8,autoPlay: true);
       });
     }
   }
@@ -217,7 +217,7 @@ class _DetailPageState extends State<DetailPage> with WidgetsBindingObserver{
                 children: [
                   CachedNetworkImage(
                     height: MediaQuery.of(context).size.width * 9.0/16.0,
-                    imageUrl: curModel.cover,
+                    imageUrl: curModel.screenShot,
                     fit: BoxFit.contain,
                     placeholder: (context,url) {
                       return Container(

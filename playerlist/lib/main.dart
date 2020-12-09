@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:playerlist/DetailPage.dart';
 import 'package:playerlist/HomePage.dart';
+import 'package:playerlist/TestPage.dart';
+import 'package:playerlist/VideoListPage.dart';
 
 void main() {
   //确保Global.init()方法不能抛出异常，否则 runApp(MyApp())根本执行不到
@@ -38,6 +40,8 @@ class MyApp extends StatelessWidget {
       routes: {
         "/": (context) => HomePage(),
         "detailPage":(context) => DetailPage(param: ModalRoute.of(context).settings.arguments,),
+        "listPage":(context) => VideoListPage(),
+        "testPage":(context) => TestPage(),
       },
       // home: MyHomePage(title: 'Flutter Demo Home Page'),
     );
