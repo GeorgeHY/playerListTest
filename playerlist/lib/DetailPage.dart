@@ -1,6 +1,5 @@
 
 import 'dart:async';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fijkplayer/fijkplayer.dart';
 import 'package:flutter/cupertino.dart';
@@ -16,7 +15,7 @@ class DetailPage extends StatefulWidget {
   _DetailPageState createState() => _DetailPageState();
 }
 
-class _DetailPageState extends State<DetailPage> {
+class _DetailPageState extends State<DetailPage> with WidgetsBindingObserver{
   final FijkPlayer player = FijkPlayer();
   VideoModel curModel;
   bool showCover = true;
@@ -24,11 +23,17 @@ class _DetailPageState extends State<DetailPage> {
 
   ///Stream监听
   StreamSubscription _currentPosSubs;
+  StreamSubscription _currentBufferSubs;
   Duration _currentPos;
+  double sliderValue = 0.0;
+  double maxDuration = 0.0;
+  // int bufferingPer = 0;
+  // bool isBuffering = false;
 
   @override
   void initState() {
     curModel = widget.param['video'];
+    player.setOption(FijkOption.playerCategory, "enable-accurate-seek", 1);
     player.addListener(_fijkValueListener);
 
     super.initState();
@@ -37,12 +42,25 @@ class _DetailPageState extends State<DetailPage> {
       autoPlay: true,
     );
 
-    _currentPos = player.currentPos;
+    // _currentPos = player.currentPos;
     _currentPosSubs = player.onCurrentPosUpdate.listen((v) {
       setState(() {
-        _currentPos = v;
+        sliderValue = v.inMilliseconds.toDouble();
       });
     });
+
+    // _currentBufferSubs = player.onBufferPercentUpdate.listen((v) {
+    //   ///缓冲不够100显示加载进度条,如果开始播放则隐藏
+    //   setState(() {
+    //     bufferingPer = v;
+    //     if (v < 100) {
+    //       isBuffering = true;
+    //     }else{
+    //       isBuffering = false;
+    //     }
+    //
+    //   });
+    // });
 
   }
 
@@ -51,23 +69,42 @@ class _DetailPageState extends State<DetailPage> {
     // TODO: implement dispose
     super.dispose();
     _currentPosSubs.cancel();
+    // _currentBufferSubs.cancel();
     player.removeListener(_fijkValueListener);
     player.release();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state != AppLifecycleState.resumed) {
+      player.pause();
+    }
+  }
+
   void _fijkValueListener() {
-    if (player.value.state == FijkState.started) {
+    FijkValue value = player.value;
+
+    maxDuration = value.duration.inMilliseconds.toDouble();
+
+    if (value.state == FijkState.started) {
       setState(() {
+        ///双判断，开始播放隐藏加载进度条
+        // isBuffering = false;
         showCover = false;
       });
     }
-    if (player.value.state == FijkState.error) {
+    if (value.state == FijkState.error) {
       setState(() {
         hasError = true;
       });
     }
 
-    if (player.value.state == FijkState.completed) {
+    if (value.state == FijkState.completed) {
+      setState(() {
+        maxDuration = 0.0;
+        sliderValue = 0.0;
+      });
+
       ///仅适用m3u8播放完成重置重新载入
       player.reset().then((value) {
         player.setDataSource(curModel.url,autoPlay: true);
@@ -111,13 +148,63 @@ class _DetailPageState extends State<DetailPage> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.orange,
+              color: Colors.black,
             ),
             child: FijkView(
               color: Colors.black,
               fit: FijkFit.contain,
               player: player,
+              panelBuilder: fijkPanel2Builder(
+
+              ),
             ),
+          ),
+          Positioned(
+
+            bottom: 30,
+            left: 20,
+            right: 20,
+            child: SliderTheme(
+              data: SliderThemeData(
+                activeTrackColor: Colors.white,
+                inactiveTrackColor: Colors.white24,
+                thumbColor: Colors.white,
+                thumbShape: RoundSliderThumbShape(
+                  enabledThumbRadius: 5,
+                )
+              ),
+              child: Slider(
+                min: 0.0,
+                max: null == maxDuration ? 1.0 : maxDuration,
+                value: sliderValue,
+                onChangeStart: (value) {
+                  player.pause();
+
+
+                },
+                ///onchanged必须实现，否则会影响界面渲染
+                onChanged: (value) {
+                  setState(() {
+                    sliderValue = value;
+                  });
+                },
+
+                onChangeEnd: (value) {
+                  player.seekTo(value.toInt()).then((value){
+                    player.start();
+                  });
+                  // sliderValue = value;
+                },
+              ),
+            ),
+            // child: Text(
+            //   null == _currentPos ? "0" : "${_currentPos.toString()}",
+            //   style: TextStyle(
+            //     color: Colors.white,
+            //     fontSize: 15.0,
+            //   ),
+            //   textAlign: TextAlign.center,
+            // ),
           ),
           Visibility(
             visible: showCover,
@@ -147,20 +234,14 @@ class _DetailPageState extends State<DetailPage> {
             visible: hasError,
             child: Icon(Icons.error,size: 50,),
           ),
-          Positioned(
-            bottom: 30,
-            left: 20,
-            right: 20,
-            child: LinearProgressIndicator(),
-            // child: Text(
-            //   null == _currentPos ? "0" : "${_currentPos.toString()}",
-            //   style: TextStyle(
-            //     color: Colors.white,
-            //     fontSize: 15.0,
-            //   ),
-            //   textAlign: TextAlign.center,
-            // ),
-          ),
+
+          // Visibility(
+          //   visible: isBuffering,
+          //   child: CircularProgressIndicator(
+          //     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          //   ),
+          // ),
+
         ],
       ),
       // extendBody: false,

@@ -3,8 +3,11 @@ class VideoModel {
 
   String url;
 
+  int duration;
+
   VideoModel(
       this.cover,
       this.url,
+      this.duration,
       );
 }

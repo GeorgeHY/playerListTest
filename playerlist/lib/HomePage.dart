@@ -12,7 +12,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    videoModel = VideoModel("https://jpg.1234567bt.com/hls/2018/08/05/mYylc92e/screenshot1.jpg", "https://m3u8.cdnpan.com/mYylc92e.m3u8");
+    videoModel = VideoModel("https://jpg.1234567bt.com/hls/2018/08/05/mYylc92e/screenshot1.jpg", "https://m3u8.cdnpan.com/mYylc92e.m3u8",40);
     super.initState();
   }
 
